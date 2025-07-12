@@ -15,23 +15,57 @@ async function generateQRCode(text) {
 // Register for a fest (solo)
 router.post('/fest', verifyToken, async (req, res) => {
   try {
-    const { festId, answers } = req.body;
+    const { 
+      festId, 
+      answers, 
+      phone, 
+      dateOfBirth, 
+      gender, 
+      city, 
+      state, 
+      instituteName 
+    } = req.body;
+    
+    // Validate required fields
+    if (!phone || !dateOfBirth || !gender || !city || !state || !instituteName) {
+      return res.status(400).json({ 
+        msg: 'Missing required fields: phone, dateOfBirth, gender, city, state, instituteName' 
+      });
+    }
+    
+    // Validate gender enum
+    if (!['Male', 'Female', 'Other'].includes(gender)) {
+      return res.status(400).json({ 
+        msg: 'Gender must be one of: Male, Female, Other' 
+      });
+    }
+    
     // Prevent duplicate registration
     const existing = await FestRegistration.findOne({ userId: req.user.id, festId });
     if (existing) return res.status(400).json({ msg: 'Already registered for this fest' });
+    
     const ticketCode = `TICKET-${new mongoose.Types.ObjectId()}`;
     const qrCode = await generateQRCode(ticketCode);
+    
     const festReg = new FestRegistration({
       userId: req.user.id,
       festId,
+      phone,
+      dateOfBirth: new Date(dateOfBirth),
+      gender,
+      city,
+      state,
+      instituteName,
       answers,
       status: 'confirmed',
       ticket: ticketCode,
       qrCode,
     });
+    
     await festReg.save();
     res.status(201).json(festReg);
   } catch (err) {
+    console.error('Fest registration error:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 });
@@ -128,6 +162,50 @@ router.get('/event/me', verifyToken, async (req, res) => {
     const regs = await EventRegistration.find({ userId: req.user.id });
     res.json(regs);
   } catch (err) {
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// Check fest registration status
+router.get('/fest/:festId/status', verifyToken, async (req, res) => {
+  try {
+    const { festId } = req.params;
+    const userId = req.user.id;
+    
+    const registration = await FestRegistration.findOne({ 
+      userId, 
+      festId 
+    }).populate('festId', 'name startDate endDate location');
+    
+    if (!registration) {
+      return res.status(404).json({ 
+        msg: 'Not registered for this fest',
+        isRegistered: false 
+      });
+    }
+    
+    res.json({
+      msg: 'Registration found',
+      isRegistered: true,
+      registration: {
+        id: registration._id,
+        status: registration.status,
+        ticket: registration.ticket,
+        qrCode: registration.qrCode,
+        phone: registration.phone,
+        dateOfBirth: registration.dateOfBirth,
+        gender: registration.gender,
+        city: registration.city,
+        state: registration.state,
+        instituteName: registration.instituteName,
+        answers: registration.answers,
+        fest: registration.festId,
+        createdAt: registration.createdAt,
+        updatedAt: registration.updatedAt
+      }
+    });
+  } catch (err) {
+    console.error('Fest registration status error:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 });

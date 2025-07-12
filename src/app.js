@@ -12,7 +12,8 @@ const morgan = require('morgan');
 const { swaggerUi, specs } = require('./swagger');
 
 app.use(cors({
-  origin: 'http://localhost:3000',
+  // origin: 'http://localhost:3000',
+  origin: '*',
   credentials: true
 }));
 app.use(express.json());

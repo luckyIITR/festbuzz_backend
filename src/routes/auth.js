@@ -2,8 +2,12 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const { sendEmail } = require('../utils/email');
+
+// Initialize Google OAuth client
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Helper to generate 6-digit OTP
 function generateOTP() {
@@ -126,39 +130,78 @@ router.post('/login', async (req, res) => {
  *               token: { type: string }
  *     responses:
  *       200: { description: Google login/signup successful }
+ *       400: { description: Invalid Google token }
  *       500: { description: Google OAuth error }
  */
 // Google OAuth login/signup
 router.post('/google', async (req, res) => {
   try {
-    const { token } = req.body; // Google ID token from frontend
-    // TODO: Replace with actual Google token verification
-    // For now, mock verification and user info extraction
-    // In production, use: const ticket = await googleClient.verifyIdToken({ idToken: token, audience: process.env.GOOGLE_CLIENT_ID });
-    // const payload = ticket.getPayload();
-    // Mock payload:
-    const payload = {
-      sub: 'mock-google-id',
-      email: 'mockuser@gmail.com',
-      name: 'Mock User',
-      picture: 'https://mockurl.com/avatar.png',
-    };
-    let user = await User.findOne({ googleId: payload.sub });
-    if (!user) {
-      user = new User({
-        name: payload.name,
-        email: payload.email,
-        googleId: payload.sub,
-        googleEmail: payload.email,
-        googleAvatar: payload.picture,
-        isVerified: true,
-        role: 'user',
-      });
-      await user.save();
+    // console.log(req);
+    const { accessToken } = req.body; // Google ID token from frontend
+    
+    if (!accessToken) {
+      return res.status(400).json({ msg: 'Google accessToken is required' });
     }
-    const jwtToken = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token: jwtToken, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+
+    // Verify Google token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: accessToken,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+    
+    const payload = ticket.getPayload();
+    
+    if (!payload) {
+      return res.status(400).json({ msg: 'Invalid Google accessToken' });
+    }
+
+    // Check if user exists by Google ID
+    let user = await User.findOne({ googleId: payload.sub });
+    
+    if (!user) {
+      // Check if user exists by email (for users who signed up with email but want to link Google)
+      user = await User.findOne({ email: payload.email });
+      
+      if (user) {
+        // Link existing account with Google
+        user.googleId = payload.sub;
+        user.googleEmail = payload.email;
+        user.googleAvatar = payload.picture;
+        await user.save();
+      } else {
+        // Create new user with Google info
+        user = new User({
+          name: payload.name,
+          email: payload.email,
+          googleId: payload.sub,
+          googleEmail: payload.email,
+          googleAvatar: payload.picture,
+          isVerified: true, // Google accounts are pre-verified
+          role: 'Participant', // Default role
+        });
+        await user.save();
+      }
+    }
+
+    // Generate JWT token
+    const jwtToken = jwt.sign(
+      { id: user._id, role: user.role }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '7d' }
+    );
+    
+    res.json({ 
+      token: jwtToken, 
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        googleAvatar: user.googleAvatar 
+      } 
+    });
   } catch (err) {
+    console.error('Google OAuth error:', err);
     res.status(500).json({ msg: 'Google OAuth error' });
   }
 });

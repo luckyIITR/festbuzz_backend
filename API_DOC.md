@@ -195,10 +195,18 @@
 ```json
 {
   "festId": "FEST_ID",
+  "phone": "1234567890",
+  "dateOfBirth": "2000-01-01",
+  "gender": "Male",
+  "city": "Mumbai",
+  "state": "Maharashtra",
+  "instituteName": "IIT Bombay",
   "answers": ["Answer1", "Answer2"]
 }
 ```
 **Response:** FestRegistration object (with ticket and QR code)
+**Required Fields:** phone, dateOfBirth, gender, city, state, instituteName
+**Gender Options:** Male, Female, Other
 
 ### Register for Event (Solo)
 `POST /api/registration/event/solo`  
@@ -211,6 +219,46 @@
 }
 ```
 **Response:** EventRegistration object (with ticket and QR code)
+
+### Check Fest Registration Status
+`GET /api/registration/fest/:festId/status`  
+**Headers:** `Authorization: Bearer <token>`
+**Response:** Registration status and details
+```json
+{
+  "msg": "Registration found",
+  "registered": true,
+  "registration": {
+    "id": "REGISTRATION_ID",
+    "status": "confirmed",
+    "ticket": "TICKET_CODE",
+    "qrCode": "QR_CODE_DATA_URL",
+    "phone": "1234567890",
+    "dateOfBirth": "2000-01-01T00:00:00.000Z",
+    "gender": "Male",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "instituteName": "IIT Bombay",
+    "answers": ["Answer1", "Answer2"],
+    "fest": {
+      "id": "FEST_ID",
+      "name": "Music Festival 2025",
+      "startDate": "2025-09-14T00:00:00.000Z",
+      "endDate": "2025-09-20T23:59:59.000Z",
+      "location": "IIT Roorkee Campus"
+    },
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-01-15T10:30:00.000Z"
+  }
+}
+```
+**If not registered:**
+```json
+{
+  "msg": "Not registered for this fest",
+  "registered": false
+}
+```
 
 ### Register for Event (Team)
 `POST /api/registration/event/team`  
