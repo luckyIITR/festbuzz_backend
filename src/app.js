@@ -13,7 +13,7 @@ const { swaggerUi, specs } = require('./swagger');
 
 app.use(cors({
   // origin: 'http://localhost:3000',
-  origin: '*',
+  origin: 'https://festbuzz-frontend.vercel.app',
   credentials: true
 }));
 app.use(express.json());
