@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Certificate = require('../models/Certificate');
 const Event = require('../models/Event');
-const { verifyToken, permitRoles } = require('../middlewares/auth');
+const { authMiddleware, permitRoles } = require('../middlewares/auth');
 const mongoose = require('mongoose');
 
 /**
@@ -15,7 +15,7 @@ const mongoose = require('mongoose');
  *       201: { description: Certificate template created/updated }
  */
 // Create or update certificate template for an event
-router.post('/template', verifyToken, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
+router.post('/template', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
   try {
     const { festId, eventId, logo1, logo2, name1, designation1, name2, designation2, template } = req.body;
     let cert = await Certificate.findOne({ festId, eventId });
@@ -47,7 +47,7 @@ router.post('/template', verifyToken, permitRoles('Admin', 'FestivalHead', 'Even
  *       200: { description: Certificates issued }
  */
 // Assign winners and issue certificates
-router.post('/issue', verifyToken, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
+router.post('/issue', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
   try {
     const { festId, eventId, participants, winners } = req.body;
     let cert = await Certificate.findOne({ festId, eventId });
@@ -80,7 +80,7 @@ router.post('/issue', verifyToken, permitRoles('Admin', 'FestivalHead', 'EventMa
  *       404: { description: Certificate not found }
  */
 // Get certificate for a user in an event
-router.get('/user/:eventId', verifyToken, async (req, res) => {
+router.get('/user/:eventId', authMiddleware, async (req, res) => {
   try {
     const cert = await Certificate.findOne({ eventId: req.params.eventId });
     if (!cert) return res.status(404).json({ msg: 'Certificate not found' });
@@ -105,7 +105,7 @@ router.get('/user/:eventId', verifyToken, async (req, res) => {
  *       200: { description: List of certificates }
  */
 // Get all certificates for a user
-router.get('/my', verifyToken, async (req, res) => {
+router.get('/my', authMiddleware, async (req, res) => {
   try {
     const certs = await Certificate.find({ $or: [ { participants: req.user.id }, { winners: req.user.id } ] });
     res.json(certs);

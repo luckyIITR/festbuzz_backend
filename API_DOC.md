@@ -13,7 +13,11 @@
   "name": "John Doe",
   "email": "john@example.com",
   "password": "yourpassword",
-  "mobile": "1234567890",
+  "phone": "1234567890",
+  "dateOfBirth": "2000-01-01",
+  "gender": "Male",
+  "college": "IIT Bombay",
+  "address": "Mumbai, Maharashtra",
   "role": "Participant"
 }
 ```
@@ -52,6 +56,40 @@
     "name": "John Doe",
     "email": "john@example.com",
     "role": "Participant"
+  }
+}
+```
+
+### Update User Profile
+`PUT /api/auth/profile`  
+**Headers:** `Authorization: Bearer <token>`
+```json
+{
+  "name": "Updated Name",
+  "phone": "9876543210",
+  "dateOfBirth": "1995-05-15",
+  "gender": "Female",
+  "college": "IIT Delhi",
+  "address": "New Delhi, India",
+  "profilePhoto": "https://example.com/photo.jpg"
+}
+```
+**Response:**
+```json
+{
+  "msg": "Profile updated successfully",
+  "user": {
+    "id": "USER_ID",
+    "name": "Updated Name",
+    "email": "user@example.com",
+    "role": "Participant",
+    "phone": "9876543210",
+    "dateOfBirth": "1995-05-15T00:00:00.000Z",
+    "gender": "Female",
+    "college": "IIT Delhi",
+    "address": "New Delhi, India",
+    "profilePhoto": "https://example.com/photo.jpg",
+    "googleAvatar": "https://example.com/google-avatar.jpg"
   }
 }
 ```

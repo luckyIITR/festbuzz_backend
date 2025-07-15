@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Fest = require('../models/Fest');
 const Event = require('../models/Event');
-const { verifyToken, permitRoles } = require('../middlewares/auth');
+const { authMiddleware, permitRoles } = require('../middlewares/auth');
 
 /**
  * @swagger
@@ -21,7 +21,7 @@ const { verifyToken, permitRoles } = require('../middlewares/auth');
  *       200: { description: List of fests }
  */
 // Create Fest
-router.post('/', verifyToken, permitRoles('Admin', 'FestivalHead'), async (req, res) => {
+router.post('/', authMiddleware, permitRoles('Admin', 'FestivalHead'), async (req, res) => {
   try {
     const fest = new Fest(req.body);
     await fest.save();
@@ -72,7 +72,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update Fest
-router.put('/:id', verifyToken, permitRoles('Admin', 'FestivalHead'), async (req, res) => {
+router.put('/:id', authMiddleware, permitRoles('Admin', 'FestivalHead'), async (req, res) => {
   try {
     const fest = await Fest.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!fest) return res.status(404).json({ msg: 'Fest not found' });
@@ -83,7 +83,7 @@ router.put('/:id', verifyToken, permitRoles('Admin', 'FestivalHead'), async (req
 });
 
 // Delete Fest
-router.delete('/:id', verifyToken, permitRoles('Admin', 'FestivalHead'), async (req, res) => {
+router.delete('/:id', authMiddleware, permitRoles('Admin', 'FestivalHead'), async (req, res) => {
   try {
     const fest = await Fest.findByIdAndDelete(req.params.id);
     if (!fest) return res.status(404).json({ msg: 'Fest not found' });
@@ -97,20 +97,6 @@ router.delete('/:id', verifyToken, permitRoles('Admin', 'FestivalHead'), async (
 const jwt = require('jsonwebtoken');
 const Registration = require('../models/Registration');
 const User = require('../models/User');
-const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ msg: 'No token provided' });
-  }
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(401).json({ msg: 'Invalid token' });
-  }
-};
 
 /**
  * @swagger
@@ -239,7 +225,7 @@ router.get('/:festId/events/:eventId', async (req, res) => {
  *       400: { description: Invalid data }
  */
 // Create new event
-router.post('/:festId/events', verifyToken, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
+router.post('/:festId/events', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
   try {
     const eventData = {
       ...req.body,
@@ -273,7 +259,7 @@ router.post('/:festId/events', verifyToken, permitRoles('Admin', 'FestivalHead',
  *       404: { description: Event not found }
  */
 // Update event
-router.put('/:festId/events/:eventId', verifyToken, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
+router.put('/:festId/events/:eventId', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
   try {
     const event = await Event.findOneAndUpdate(
       { _id: req.params.eventId, festId: req.params.festId },
@@ -307,7 +293,7 @@ router.put('/:festId/events/:eventId', verifyToken, permitRoles('Admin', 'Festiv
  *       404: { description: Event not found }
  */
 // Delete event
-router.delete('/:festId/events/:eventId', verifyToken, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
+router.delete('/:festId/events/:eventId', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
   try {
     const event = await Event.findOneAndDelete({ _id: req.params.eventId, festId: req.params.festId });
     if (!event) return res.status(404).json({ msg: 'Event not found' });
@@ -403,6 +389,31 @@ router.post('/:festId/events/:eventId/register/team', authMiddleware, async (req
     });
     await registration.save();
     res.status(201).json(registration);
+  } catch (err) {
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// GET /api/fests/filters
+router.get('/filters', async (req, res) => {
+  try {
+    const types = await Fest.distinct('type');
+    const locations = await Fest.distinct('location');
+    const prices = await Fest.find({}, { individualPrice: 1, teamPrice: 1, _id: 0 });
+    const allPrices = prices.flatMap(p => [p.individualPrice, p.teamPrice].filter(Number.isFinite));
+    const minPrice = allPrices.length ? Math.min(...allPrices) : 0;
+    const maxPrice = allPrices.length ? Math.max(...allPrices) : 0;
+    const dates = await Fest.find({}, { startDate: 1, endDate: 1, _id: 0 });
+    const allDates = dates.flatMap(d => [d.startDate, d.endDate].filter(Boolean));
+    const minDate = allDates.length ? new Date(Math.min(...allDates.map(d => new Date(d)))) : null;
+    const maxDate = allDates.length ? new Date(Math.max(...allDates.map(d => new Date(d)))) : null;
+    res.json({
+      types,
+      locations,
+      price: { min: minPrice, max: maxPrice },
+      date: { min: minDate, max: maxDate },
+      ratings: [] // Placeholder
+    });
   } catch (err) {
     res.status(500).json({ msg: 'Server error' });
   }

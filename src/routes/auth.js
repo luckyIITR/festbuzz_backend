@@ -37,13 +37,40 @@ function generateOTP() {
 // Signup
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password, mobile, role } = req.body;
+    const { 
+      name, 
+      email, 
+      password, 
+      phone, 
+      dateOfBirth, 
+      gender, 
+      college, 
+      address, 
+      role 
+    } = req.body;
+    
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ msg: 'User already exists' });
+    
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
-    user = new User({ name, email, password: hashedPassword, mobile, role, otp, otpExpires, isVerified: false });
+    
+    user = new User({ 
+      name, 
+      email, 
+      password: hashedPassword, 
+      phone, 
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+      gender, 
+      college, 
+      address, 
+      role, 
+      otp, 
+      otpExpires, 
+      isVerified: false 
+    });
+    
     await user.save();
     // Send OTP email
     await sendEmail(email, 'Festbuz OTP Verification', `Your OTP is: ${otp}`, `<p>Your OTP is: <b>${otp}</b></p>`);
@@ -72,7 +99,17 @@ router.post('/verify-otp', async (req, res) => {
     res.json({
       msg: 'OTP verified. Account activated.',
       token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role }
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        phone: user.phone,
+        dateOfBirth: user.dateOfBirth,
+        gender: user.gender,
+        college: user.college,
+        address: user.address
+      }
     });
   } catch (err) {
     res.status(500).json({ msg: 'Server error' });
@@ -108,7 +145,21 @@ router.post('/login', async (req, res) => {
     if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
     if (!user.isVerified) return res.status(403).json({ msg: 'Account not verified. Please verify OTP.' });
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+    // res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.json({ 
+      token, 
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        phone: user.phone,
+        dateOfBirth: user.dateOfBirth,
+        gender: user.gender,
+        college: user.college,
+        address: user.address
+      } 
+    });
   } catch (err) {
     res.status(500).json({ msg: 'Server error' });
   }
@@ -197,6 +248,11 @@ router.post('/google', async (req, res) => {
         name: user.name, 
         email: user.email, 
         role: user.role,
+        phone: user.phone,
+        dateOfBirth: user.dateOfBirth,
+        gender: user.gender,
+        college: user.college,
+        address: user.address,
         googleAvatar: user.googleAvatar 
       } 
     });
@@ -208,6 +264,7 @@ router.post('/google', async (req, res) => {
 
 // Middleware to verify JWT and attach user to req
 const authMiddleware = (req, res, next) => {
+  // console.log(`authMiddleware`);
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ msg: 'No token provided' });
@@ -222,20 +279,86 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+// Update user profile
+router.put('/profile', authMiddleware, async (req, res) => {
+  try {
+    const { 
+      name, 
+      phone, 
+      dateOfBirth, 
+      gender, 
+      college, 
+      address, 
+      profilePhoto 
+    } = req.body;
+    
+    // Validate gender if provided
+    if (gender && !['Male', 'Female', 'Other'].includes(gender)) {
+      return res.status(400).json({ 
+        msg: 'Gender must be one of: Male, Female, Other' 
+      });
+    }
+    
+    // Find user
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    
+    // Only update fields that are provided in the request
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (phone !== undefined) updateData.phone = phone;
+    if (dateOfBirth !== undefined) updateData.dateOfBirth = new Date(dateOfBirth);
+    if (gender !== undefined) updateData.gender = gender;
+    if (college !== undefined) updateData.college = college;
+    if (address !== undefined) updateData.address = address;
+    if (profilePhoto !== undefined) updateData.profilePhoto = profilePhoto;
+    
+    // Update user with only the provided fields
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+    
+    res.json({
+      msg: 'Profile updated successfully',
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        phone: updatedUser.phone,
+        dateOfBirth: updatedUser.dateOfBirth,
+        gender: updatedUser.gender,
+        college: updatedUser.college,
+        address: updatedUser.address,
+        profilePhoto: updatedUser.profilePhoto,
+        googleAvatar: updatedUser.googleAvatar
+      }
+    });
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+
 /**
  * @swagger
- * /api/auth/me:
+ * /api/auth/profile:
  *   get:
- *     summary: Get current user info
+ *     summary: Get current user profile
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     responses:
- *       200: { description: User info }
+ *       200: { description: User profile }
  *       401: { description: Unauthorized }
  */
-// Get current user info
-router.get('/me', authMiddleware, async (req, res) => {
+// Get current user profile
+router.get('/profile', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password -otp -otpExpires');
     if (!user) return res.status(404).json({ msg: 'User not found' });
@@ -244,6 +367,7 @@ router.get('/me', authMiddleware, async (req, res) => {
     res.status(500).json({ msg: 'Server error' });
   }
 });
+
 
 /**
  * @swagger

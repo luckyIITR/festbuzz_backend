@@ -10,10 +10,11 @@ const registrationRoutes = require('./routes/registration');
 const certificateRoutes = require('./routes/certificate');
 const morgan = require('morgan');
 const { swaggerUi, specs } = require('./swagger');
+const myfestsRoutes = require('./routes/myfests');
 
 app.use(cors({
-  // origin: 'http://localhost:3000',
-  origin: 'https://festbuzz-frontend.vercel.app',
+  origin: 'http://localhost:3000',
+  // origin: 'https://festbuzz-frontend.vercel.app',
   credentials: true
 }));
 app.use(express.json());
@@ -30,6 +31,7 @@ app.use('/api/fests', festRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/registration', registrationRoutes);
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/myfests', myfestsRoutes);
 app.use('/uploads', express.static('uploads'));
 const uploadRoutes = require('./routes/upload');
 app.use('/api/upload', uploadRoutes);

@@ -3,28 +3,11 @@ const router = express.Router({ mergeParams: true });
 const Event = require('../models/Event');
 const Registration = require('../models/Registration');
 const Team = require('../models/Team');
-const User = require('../models/User');
-const jwt = require('jsonwebtoken');
-const { verifyToken, permitRoles } = require('../middlewares/auth');
+const { authMiddleware, permitRoles } = require('../middlewares/auth');
 
-// Auth middleware (reuse from auth.js if possible)
-const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ msg: 'No token provided' });
-  }
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(401).json({ msg: 'Invalid token' });
-  }
-};
 
 // Create Event
-router.post('/', verifyToken, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
+router.post('/', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
   try {
     const event = new Event(req.body);
     await event.save();
@@ -57,7 +40,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update Event
-router.put('/:id', verifyToken, permitRoles('FestivalHead', 'EventManager'), async (req, res) => {
+router.put('/:id', authMiddleware, permitRoles('FestivalHead', 'EventManager'), async (req, res) => {
   try {
     const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!event) return res.status(404).json({ msg: 'Event not found' });
@@ -68,7 +51,7 @@ router.put('/:id', verifyToken, permitRoles('FestivalHead', 'EventManager'), asy
 });
 
 // Delete Event
-router.delete('/:id', verifyToken, permitRoles('FestivalHead', 'EventManager'), async (req, res) => {
+router.delete('/:id', authMiddleware, permitRoles('FestivalHead', 'EventManager'), async (req, res) => {
   try {
     const event = await Event.findByIdAndDelete(req.params.id);
     if (!event) return res.status(404).json({ msg: 'Event not found' });
@@ -79,7 +62,7 @@ router.delete('/:id', verifyToken, permitRoles('FestivalHead', 'EventManager'), 
 });
 
 // Add judge to event
-router.post('/:id/judges', verifyToken, permitRoles('FestivalHead', 'EventManager'), async (req, res) => {
+router.post('/:id/judges', authMiddleware, permitRoles('FestivalHead', 'EventManager'), async (req, res) => {
   try {
     const { name, mobile, about, email, photo } = req.body;
     const event = await Event.findById(req.params.id);
@@ -93,7 +76,7 @@ router.post('/:id/judges', verifyToken, permitRoles('FestivalHead', 'EventManage
 });
 
 // Remove judge from event
-router.delete('/:id/judges/:judgeIndex', verifyToken, permitRoles('FestivalHead', 'EventManager'), async (req, res) => {
+router.delete('/:id/judges/:judgeIndex', authMiddleware, permitRoles('FestivalHead', 'EventManager'), async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ msg: 'Event not found' });
@@ -117,7 +100,7 @@ router.get('/:id/judges', async (req, res) => {
 });
 
 // Assign event role
-router.post('/:id/roles', verifyToken, permitRoles('FestivalHead', 'EventManager'), async (req, res) => {
+router.post('/:id/roles', authMiddleware, permitRoles('FestivalHead', 'EventManager'), async (req, res) => {
   try {
     const { type, name, email } = req.body;
     const event = await Event.findById(req.params.id);
@@ -131,7 +114,7 @@ router.post('/:id/roles', verifyToken, permitRoles('FestivalHead', 'EventManager
 });
 
 // Remove event role
-router.delete('/:id/roles/:roleIndex', verifyToken, permitRoles('FestivalHead', 'EventManager'), async (req, res) => {
+router.delete('/:id/roles/:roleIndex', authMiddleware, permitRoles('FestivalHead', 'EventManager'), async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ msg: 'Event not found' });

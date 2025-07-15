@@ -16,12 +16,22 @@ const userSchema = new mongoose.Schema({
   password: { type: String }, // Not required for OAuth users
   role: { type: String, enum: roles, default: 'user' },
   profileInfo: { type: profileInfoSchema }, // Optional
+  // Personal Information
+  phone: { type: String },
+  dateOfBirth: { type: Date },
+  gender: { type: String, enum: ['Male', 'Female', 'Other'] },
+  // Academic Information
+  college: { type: String },
+  // Location Information
+  address: { type: String },
+  // Wishlist and Recently Viewed Fests
+  wishlistFests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Fest' }],
+  recentlyViewedFests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Fest' }],
   // Google OAuth fields
   googleId: { type: String },
   googleEmail: { type: String },
   googleAvatar: { type: String },
   // Other fields
-  mobile: { type: String },
   profilePhoto: { type: String },
   otp: { type: String },
   otpExpires: { type: Date },

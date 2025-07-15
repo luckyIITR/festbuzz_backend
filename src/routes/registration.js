@@ -3,7 +3,7 @@ const router = express.Router();
 const FestRegistration = require('../models/FestRegistration');
 const EventRegistration = require('../models/EventRegistration');
 const Team = require('../models/Team');
-const { verifyToken } = require('../middlewares/auth');
+const { authMiddleware } = require('../middlewares/auth');
 const mongoose = require('mongoose');
 const QRCode = require('qrcode');
 
@@ -13,7 +13,7 @@ async function generateQRCode(text) {
 }
 
 // Register for a fest (solo)
-router.post('/fest', verifyToken, async (req, res) => {
+router.post('/fest', authMiddleware, async (req, res) => {
   try {
     const { 
       festId, 
@@ -71,7 +71,7 @@ router.post('/fest', verifyToken, async (req, res) => {
 });
 
 // Register for an event (solo)
-router.post('/event/solo', verifyToken, async (req, res) => {
+router.post('/event/solo', authMiddleware, async (req, res) => {
   try {
     const { festId, eventId, answers } = req.body;
     // Check fest registration
@@ -100,7 +100,7 @@ router.post('/event/solo', verifyToken, async (req, res) => {
 });
 
 // Register for an event (team)
-router.post('/event/team', verifyToken, async (req, res) => {
+router.post('/event/team', authMiddleware, async (req, res) => {
   try {
     const { festId, eventId, teamName, passcode, memberIds, answers } = req.body;
     // Check fest registration for all members
@@ -147,7 +147,7 @@ router.post('/event/team', verifyToken, async (req, res) => {
 });
 
 // Get my fest registrations
-router.get('/fest/me', verifyToken, async (req, res) => {
+router.get('/fest/me', authMiddleware, async (req, res) => {
   try {
     const regs = await FestRegistration.find({ userId: req.user.id });
     res.json(regs);
@@ -157,7 +157,7 @@ router.get('/fest/me', verifyToken, async (req, res) => {
 });
 
 // Get my event registrations
-router.get('/event/me', verifyToken, async (req, res) => {
+router.get('/event/me', authMiddleware, async (req, res) => {
   try {
     const regs = await EventRegistration.find({ userId: req.user.id });
     res.json(regs);
@@ -167,7 +167,7 @@ router.get('/event/me', verifyToken, async (req, res) => {
 });
 
 // Check fest registration status
-router.get('/fest/:festId/status', verifyToken, async (req, res) => {
+router.get('/fest/:festId/status', authMiddleware, async (req, res) => {
   try {
     const { festId } = req.params;
     const userId = req.user.id;
@@ -211,7 +211,7 @@ router.get('/fest/:festId/status', verifyToken, async (req, res) => {
 });
 
 // Get QR code for a fest registration
-router.get('/fest/qrcode/:id', verifyToken, async (req, res) => {
+router.get('/fest/qrcode/:id', authMiddleware, async (req, res) => {
   try {
     const reg = await FestRegistration.findById(req.params.id);
     if (!reg || reg.userId.toString() !== req.user.id) {
@@ -224,7 +224,7 @@ router.get('/fest/qrcode/:id', verifyToken, async (req, res) => {
 });
 
 // Get QR code for an event registration
-router.get('/event/qrcode/:id', verifyToken, async (req, res) => {
+router.get('/event/qrcode/:id', authMiddleware, async (req, res) => {
   try {
     const reg = await EventRegistration.findById(req.params.id);
     if (!reg || reg.userId.toString() !== req.user.id) {
