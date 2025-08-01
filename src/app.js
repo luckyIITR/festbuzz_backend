@@ -9,12 +9,11 @@ const eventRoutes = require('./routes/event');
 const registrationRoutes = require('./routes/registration');
 const certificateRoutes = require('./routes/certificate');
 const morgan = require('morgan');
-const { swaggerUi, specs } = require('./swagger');
 const myfestsRoutes = require('./routes/myfests');
+const festivalManagementRoutes = require('./routes/festivalManagement');
 
 app.use(cors({
-  origin: 'http://localhost:3000',
-  // origin: 'https://festbuzz-frontend.vercel.app',
+  origin: ['http://localhost:3000', 'https://festbuzz-frontend.vercel.app'],
   credentials: true
 }));
 app.use(express.json());
@@ -32,10 +31,10 @@ app.use('/api/events', eventRoutes);
 app.use('/api/registration', registrationRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/myfests', myfestsRoutes);
+app.use('/api/festival-management', festivalManagementRoutes);
 app.use('/uploads', express.static('uploads'));
 const uploadRoutes = require('./routes/upload');
 app.use('/api/upload', uploadRoutes);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

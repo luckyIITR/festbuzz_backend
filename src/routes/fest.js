@@ -4,26 +4,11 @@ const Fest = require('../models/Fest');
 const Event = require('../models/Event');
 const { authMiddleware, permitRoles } = require('../middlewares/auth');
 
-/**
- * @swagger
- * /api/fests:
- *   get:
- *     summary: List all fests (with optional trending/upcoming filters)
- *     tags: [Fests]
- *     parameters:
- *       - in: query
- *         name: trending
- *         schema: { type: boolean }
- *       - in: query
- *         name: upcoming
- *         schema: { type: boolean }
- *     responses:
- *       200: { description: List of fests }
- */
-// Create Fest
-router.post('/', authMiddleware, permitRoles('Admin', 'FestivalHead'), async (req, res) => {
+// Create Fest (only superadmin can create festivals)
+router.post('/', authMiddleware, permitRoles('superadmin','admin'), async (req, res) => {
   try {
-    const fest = new Fest(req.body);
+    const festData = { ...req.body, createdBy: req.user.id };
+    const fest = new Fest(festData);
     await fest.save();
     res.status(201).json(fest);
   } catch (err) {
@@ -45,21 +30,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/fests/{id}:
- *   get:
- *     summary: Get single fest details (with events)
- *     tags: [Fests]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200: { description: Fest details }
- *       404: { description: Fest not found }
- */
 // Get Fest by ID and populate events
 router.get('/:id', async (req, res) => {
   try {
@@ -71,8 +41,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Update Fest
-router.put('/:id', authMiddleware, permitRoles('Admin', 'FestivalHead'), async (req, res) => {
+// Update Fest (only superadmin or festival admin can update)
+router.put('/:id', authMiddleware, permitRoles('superadmin', 'admin'), async (req, res) => {
   try {
     const fest = await Fest.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!fest) return res.status(404).json({ msg: 'Fest not found' });
@@ -82,8 +52,8 @@ router.put('/:id', authMiddleware, permitRoles('Admin', 'FestivalHead'), async (
   }
 });
 
-// Delete Fest
-router.delete('/:id', authMiddleware, permitRoles('Admin', 'FestivalHead'), async (req, res) => {
+// Delete Fest (only superadmin can delete)
+router.delete('/:id', authMiddleware, permitRoles('superadmin', 'admin'), async (req, res) => {
   try {
     const fest = await Fest.findByIdAndDelete(req.params.id);
     if (!fest) return res.status(404).json({ msg: 'Fest not found' });
@@ -98,21 +68,6 @@ const jwt = require('jsonwebtoken');
 const Registration = require('../models/Registration');
 const User = require('../models/User');
 
-/**
- * @swagger
- * /api/fests/{festId}/register:
- *   post:
- *     summary: Register for a fest
- *     tags: [Fests]
- *     parameters:
- *       - in: path
- *         name: festId
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       201: { description: Registration successful }
- *       400: { description: Already registered }
- */
 router.post('/:festId/register', authMiddleware, async (req, res) => {
   try {
     const { festId } = req.params;
@@ -134,20 +89,6 @@ router.post('/:festId/register', authMiddleware, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/fests/{festId}/events:
- *   get:
- *     summary: Get all events for a specific fest
- *     tags: [Events]
- *     parameters:
- *       - in: path
- *         name: festId
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200: { description: List of events }
- */
 // Get all events for a specific fest
 router.get('/:festId/events', async (req, res) => {
   try {
@@ -158,25 +99,6 @@ router.get('/:festId/events', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/fests/{festId}/events/{eventId}:
- *   get:
- *     summary: Get specific event details
- *     tags: [Events]
- *     parameters:
- *       - in: path
- *         name: festId
- *         required: true
- *         schema: { type: string }
- *       - in: path
- *         name: eventId
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200: { description: Event details }
- *       404: { description: Event not found }
- */
 // Get specific event details
 router.get('/:festId/events/:eventId', async (req, res) => {
   try {
@@ -188,42 +110,6 @@ router.get('/:festId/events/:eventId', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/fests/{festId}/events:
- *   post:
- *     summary: Create new event (requires authentication)
- *     tags: [Events]
- *     parameters:
- *       - in: path
- *         name: festId
- *         required: true
- *         schema: { type: string }
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name: { type: string }
- *               description: { type: string }
- *               price: { type: number }
- *               startDate: { type: string, format: date-time }
- *               endDate: { type: string, format: date-time }
- *               location: { type: string }
- *               category: { type: string }
- *               maxParticipants: { type: number }
- *               isTeamEvent: { type: boolean }
- *               teamSize: { type: number }
- *               rules: { type: string }
- *               prizes: { type: string }
- *               image: { type: string }
- *               bannerImage: { type: string }
- *     responses:
- *       201: { description: Event created }
- *       400: { description: Invalid data }
- */
 // Create new event
 router.post('/:festId/events', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
   try {
@@ -239,25 +125,6 @@ router.post('/:festId/events', authMiddleware, permitRoles('Admin', 'FestivalHea
   }
 });
 
-/**
- * @swagger
- * /api/fests/{festId}/events/{eventId}:
- *   put:
- *     summary: Update event (requires authentication)
- *     tags: [Events]
- *     parameters:
- *       - in: path
- *         name: festId
- *         required: true
- *         schema: { type: string }
- *       - in: path
- *         name: eventId
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200: { description: Event updated }
- *       404: { description: Event not found }
- */
 // Update event
 router.put('/:festId/events/:eventId', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
   try {
@@ -273,25 +140,6 @@ router.put('/:festId/events/:eventId', authMiddleware, permitRoles('Admin', 'Fes
   }
 });
 
-/**
- * @swagger
- * /api/fests/{festId}/events/{eventId}:
- *   delete:
- *     summary: Delete event (requires authentication)
- *     tags: [Events]
- *     parameters:
- *       - in: path
- *         name: festId
- *         required: true
- *         schema: { type: string }
- *       - in: path
- *         name: eventId
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200: { description: Event deleted }
- *       404: { description: Event not found }
- */
 // Delete event
 router.delete('/:festId/events/:eventId', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
   try {
@@ -303,15 +151,6 @@ router.delete('/:festId/events/:eventId', authMiddleware, permitRoles('Admin', '
   }
 });
 
-/**
- * @swagger
- * /api/sponsors:
- *   get:
- *     summary: List sponsors (global)
- *     tags: [Misc]
- *     responses:
- *       200: { description: List of sponsors }
- */
 // List all sponsors globally
 router.get('/api/sponsors', async (req, res) => {
   try {
