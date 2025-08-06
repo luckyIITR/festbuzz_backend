@@ -11,6 +11,9 @@ const certificateRoutes = require('./routes/certificate');
 const morgan = require('morgan');
 const myfestsRoutes = require('./routes/myfests');
 const festivalManagementRoutes = require('./routes/festivalManagement');
+const wishlistRoutes = require('./routes/wishlist');
+const recentlyViewedRoutes = require('./routes/recentlyViewed');
+const teamRoutes = require('./routes/team');
 
 app.use(cors({
   origin: ['http://localhost:3000', 'https://festbuzz-frontend.vercel.app'],
@@ -32,7 +35,10 @@ app.use('/api/registration', registrationRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/myfests', myfestsRoutes);
 app.use('/api/festival-management', festivalManagementRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/recently-viewed', recentlyViewedRoutes);
 app.use('/uploads', express.static('uploads'));
+app.use('/api/teams', teamRoutes);
 const uploadRoutes = require('./routes/upload');
 app.use('/api/upload', uploadRoutes);
 

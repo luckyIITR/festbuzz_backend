@@ -14,27 +14,6 @@ function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-/**
- * @swagger
- * /api/auth/signup:
- *   post:
- *     summary: Register new user
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name: { type: string }
- *               email: { type: string }
- *               password: { type: string }
- *     responses:
- *       201: { description: Signup successful }
- *       400: { description: User already exists }
- */
-// Signup
 router.post('/signup', async (req, res) => {
   try {
     const { 
@@ -116,26 +95,7 @@ router.post('/verify-otp', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/auth/login:
- *   post:
- *     summary: Login user
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email: { type: string }
- *               password: { type: string }
- *     responses:
- *       200: { description: Login successful }
- *       400: { description: Invalid credentials }
- */
-// Login (add isVerified check)
+
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -165,26 +125,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/auth/google:
- *   post:
- *     summary: Google OAuth login/signup
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               token: { type: string }
- *     responses:
- *       200: { description: Google login/signup successful }
- *       400: { description: Invalid Google token }
- *       500: { description: Google OAuth error }
- */
-// Google OAuth login/signup
+
 router.post('/google', async (req, res) => {
   try {
     // console.log(req);
@@ -345,19 +286,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
 });
 
 
-/**
- * @swagger
- * /api/auth/profile:
- *   get:
- *     summary: Get current user profile
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200: { description: User profile }
- *       401: { description: Unauthorized }
- */
-// Get current user profile
+
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password -otp -otpExpires');
@@ -369,37 +298,13 @@ router.get('/profile', authMiddleware, async (req, res) => {
 });
 
 
-/**
- * @swagger
- * /api/auth/logout:
- *   post:
- *     summary: Logout user
- *     tags: [Auth]
- *     responses:
- *       200: { description: Logged out }
- */
-// Logout (for JWT, just instruct client to delete token)
+
 router.post('/logout', (req, res) => {
   // No server-side action needed for JWT logout
   res.json({ msg: 'Logged out' });
 });
 
-/**
- * @swagger
- * /api/auth/users/{userId}:
- *   get:
- *     summary: Get user profile by ID
- *     tags: [Auth]
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200: { description: User profile }
- *       404: { description: User not found }
- */
-// Get user profile by ID
+
 router.get('/users/:userId', async (req, res) => {
   try {
     const user = await User.findById(req.params.userId).select('-password -otp -otpExpires');

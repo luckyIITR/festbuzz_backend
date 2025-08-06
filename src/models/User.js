@@ -24,9 +24,10 @@ const userSchema = new mongoose.Schema({
   college: { type: String },
   // Location Information
   address: { type: String },
-  // Wishlist and Recently Viewed Fests
-  wishlistFests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Fest' }],
-  recentlyViewedFests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Fest' }],
+  city: { type: String },
+  state: { type: String },
+  // Wishlist and Recently Viewed Fests are now stored in separate collections
+  // See: Wishlist.js and RecentlyViewed.js models
   // Google OAuth fields
   googleId: { type: String },
   googleEmail: { type: String },

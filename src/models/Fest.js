@@ -14,10 +14,6 @@ const ticketSchema = new mongoose.Schema({
   price: Number,
   availableFrom: { type: Date }, // contains both date and time
   availableTill: { type: Date }, // contains both date and time
-
-  //  deprecated fields
-  availableTime: String,
-  endTime: String,
 });
 
 const festSchema = new mongoose.Schema({
@@ -49,33 +45,6 @@ const festSchema = new mongoose.Schema({
   tickets: [ticketSchema],
   
 
-
-  // deprecated fields
-  description: { type: String },
-  organizer: { type: String },
-  location: { type: String },
-  price: { type: Number },
-  theme: { type: String },
-  eligibility: { type: String },
-  specialAttractions: { type: String },
-  perks: { type: String },
-  categories: [{ type: String }],
-  maxParticipants: { type: Number },
-  isTeamRegistration: { type: Boolean, default: false },
-  teamSize: { type: Number },
-  rules: { type: String },
-  prizes: { type: String },
-  // Legacy fields for backward compatibility
-  cover_image: { type: String },
-  gallery_images: [{ type: String }],
-  trending: { type: Boolean, default: false },
-  upcoming: { type: Boolean, default: false },
-  start_date: { type: Date },
-  end_date: { type: Date },
-  type: String,
-  instagram: String,
-  linkedin: String,
-  youtube: String,
 }, { timestamps: true });
 
 module.exports = mongoose.model('Fest', festSchema); 

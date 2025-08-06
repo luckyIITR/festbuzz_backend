@@ -37,7 +37,7 @@ router.get('/:id', async (req, res) => {
     if (!fest) return res.status(404).json({ msg: 'Fest not found' });
     res.json(fest);
   } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
+    res.status(500).json({ msg: err.message });
   }
 });
 
