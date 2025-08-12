@@ -2,15 +2,10 @@ const express = require('express');
 const router = express.Router();
 const Fest = require('../models/Fest');
 const Event = require('../models/Event');
-const { authMiddleware, permitRoles } = require('../middlewares/auth');
+const { authMiddleware } = require('../middlewares/auth');
 const { 
   canCreateFests, 
   canManageFests, 
-  canCreateEvents, 
-  canModifyEvents, 
-  canManageEvents,
-  canViewEventDetails,
-  canViewParticipants
 } = require('../middlewares/rolePermissions');
 
 // Create Fest (superadmin and admin can create festivals)
@@ -73,170 +68,14 @@ router.delete('/:id', authMiddleware, canManageFests, async (req, res) => {
 });
 
 // Register for a fest
-const jwt = require('jsonwebtoken');
 const Registration = require('../models/Registration');
-const User = require('../models/User');
 
-router.post('/:festId/register', authMiddleware, async (req, res) => {
-  try {
-    const { festId } = req.params;
-    const userId = req.user.id;
-    // Prevent duplicate registration
-    const existing = await Registration.findOne({ user_id: userId, fest_id: festId, type: 'fest' });
-    if (existing) return res.status(400).json({ msg: 'Already registered for this fest' });
-    const registration = new Registration({
-      user_id: userId,
-      fest_id: festId,
-      type: 'fest',
-      registration_mode: 'individual',
-      status: 'pending',
-    });
-    await registration.save();
-    res.status(201).json(registration);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
 
 // Get all events for a specific fest
 router.get('/:festId/events', async (req, res) => {
   try {
     const events = await Event.find({ festId: req.params.festId });
     res.json(events);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// Get specific event details
-router.get('/:festId/events/:eventId', async (req, res) => {
-  try {
-    const event = await Event.findOne({ _id: req.params.eventId, festId: req.params.festId });
-    if (!event) return res.status(404).json({ msg: 'Event not found' });
-    res.json(event);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// Create new event
-router.post('/:festId/events', authMiddleware, canCreateEvents, async (req, res) => {
-  try {
-    const eventData = {
-      ...req.body,
-      festId: req.params.festId
-    };
-    const event = new Event(eventData);
-    await event.save();
-    res.status(201).json(event);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// Update event
-router.put('/:festId/events/:eventId', authMiddleware, canModifyEvents, async (req, res) => {
-  try {
-    const event = await Event.findOneAndUpdate(
-      { _id: req.params.eventId, festId: req.params.festId },
-      req.body,
-      { new: true }
-    );
-    if (!event) return res.status(404).json({ msg: 'Event not found' });
-    res.json(event);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// Delete event
-router.delete('/:festId/events/:eventId', authMiddleware, canManageEvents, async (req, res) => {
-  try {
-    const event = await Event.findOneAndDelete({ _id: req.params.eventId, festId: req.params.festId });
-    if (!event) return res.status(404).json({ msg: 'Event not found' });
-    res.json({ msg: 'Event deleted' });
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// List all sponsors globally
-router.get('/api/sponsors', async (req, res) => {
-  try {
-    const fests = await Fest.find({}, 'sponsors');
-    const sponsors = fests.flatMap(fest => fest.sponsors || []);
-    res.json(sponsors);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// Get sponsors for an event
-router.get('/:festId/events/:eventId/sponsors', async (req, res) => {
-  try {
-    const event = await Event.findOne({ _id: req.params.eventId, festId: req.params.festId });
-    if (!event) return res.status(404).json({ msg: 'Event not found' });
-    res.json(event.sponsors || []);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// Get judges for an event
-router.get('/:festId/events/:eventId/judges', async (req, res) => {
-  try {
-    const event = await Event.findOne({ _id: req.params.eventId, festId: req.params.festId });
-    if (!event) return res.status(404).json({ msg: 'Event not found' });
-    res.json(event.judges || []);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// Register individual for event
-router.post('/:festId/events/:eventId/register/individual', authMiddleware, async (req, res) => {
-  try {
-    const { festId, eventId } = req.params;
-    const userId = req.user.id;
-    // Prevent duplicate registration
-    const existing = await Registration.findOne({ user_id: userId, event_id: eventId, festId, type: 'event', registration_mode: 'individual' });
-    if (existing) return res.status(400).json({ msg: 'Already registered for this event' });
-    const registration = new Registration({
-      user_id: userId,
-      event_id: eventId,
-      festId,
-      type: 'event',
-      registration_mode: 'individual',
-      status: 'pending',
-    });
-    await registration.save();
-    res.status(201).json(registration);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// Register team for event
-router.post('/:festId/events/:eventId/register/team', authMiddleware, async (req, res) => {
-  try {
-    const { festId, eventId } = req.params;
-    const { team_id } = req.body;
-    const userId = req.user.id;
-    if (!team_id) return res.status(400).json({ msg: 'team_id is required' });
-    // Prevent duplicate registration
-    const existing = await Registration.findOne({ team_id, event_id: eventId, festId, type: 'event', registration_mode: 'team' });
-    if (existing) return res.status(400).json({ msg: 'Team already registered for this event' });
-    const registration = new Registration({
-      team_id,
-      event_id: eventId,
-      festId,
-      user_id: userId, // the user who is registering the team
-      type: 'event',
-      registration_mode: 'team',
-      status: 'pending',
-    });
-    await registration.save();
-    res.status(201).json(registration);
   } catch (err) {
     res.status(500).json({ msg: 'Server error' });
   }

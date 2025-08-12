@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const { sendEmail } = require('../utils/email');
+const { authMiddleware } = require('../middlewares/auth');
 
 // Initialize Google OAuth client
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -203,23 +204,6 @@ router.post('/google', async (req, res) => {
   }
 });
 
-// Middleware to verify JWT and attach user to req
-const authMiddleware = (req, res, next) => {
-  // console.log(`authMiddleware`);
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ msg: 'No token provided' });
-  }
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(401).json({ msg: 'Invalid token' });
-  }
-};
-
 // Update user profile
 router.put('/profile', authMiddleware, async (req, res) => {
   try {
@@ -286,7 +270,6 @@ router.put('/profile', authMiddleware, async (req, res) => {
 });
 
 
-
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password -otp -otpExpires');
@@ -297,22 +280,5 @@ router.get('/profile', authMiddleware, async (req, res) => {
   }
 });
 
-
-
-router.post('/logout', (req, res) => {
-  // No server-side action needed for JWT logout
-  res.json({ msg: 'Logged out' });
-});
-
-
-router.get('/users/:userId', async (req, res) => {
-  try {
-    const user = await User.findById(req.params.userId).select('-password -otp -otpExpires');
-    if (!user) return res.status(404).json({ msg: 'User not found' });
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
 
 module.exports = router; 

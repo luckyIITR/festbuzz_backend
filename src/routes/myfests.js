@@ -4,7 +4,6 @@ const { authMiddleware } = require('../middlewares/auth');
 const Fest = require('../models/Fest');
 const User = require('../models/User');
 const FestRegistration = require('../models/FestRegistration');
-const mongoose = require('mongoose');
 
 // GET /api/myfests - All fests user is associated with (upcoming, ongoing, past)
 router.get('/', authMiddleware, async (req, res) => {

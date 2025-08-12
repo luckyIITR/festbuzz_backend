@@ -1,4 +1,4 @@
-const FestivalUserRole = require('../models/FestivalUserRole');
+
 
 // Role-based permission middleware
 const rolePermissions = {
@@ -158,20 +158,6 @@ const requireFestivalPermission = (permission) => {
       // For global roles (admin), check if they have the permission
       if (userRole === 'admin' && hasPermission(userRole, permission)) {
         return next();
-      }
-
-      // For festival-specific roles, check festival membership
-      if (festId) {
-        const festivalRole = await FestivalUserRole.findOne({
-          userId: req.user.id,
-          festId: festId,
-          isActive: true
-        });
-
-        if (festivalRole && hasPermission(festivalRole.role, permission)) {
-          req.user.festivalRole = festivalRole.role;
-          return next();
-        }
       }
 
       return res.status(403).json({ 

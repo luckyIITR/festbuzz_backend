@@ -2,13 +2,11 @@ const express = require('express');
 const router = express.Router();
 const FestRegistration = require('../models/FestRegistration');
 const EventRegistration = require('../models/EventRegistration');
-const Team = require('../models/Team');
 const User = require('../models/User');
 const Event = require('../models/Event');
 const { authMiddleware } = require('../middlewares/auth');
 const { 
-  canViewParticipants,
-  canPublishResults
+  canViewParticipants
 } = require('../middlewares/rolePermissions');
 const mongoose = require('mongoose');
 const QRCode = require('qrcode');
