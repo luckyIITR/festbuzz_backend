@@ -169,7 +169,7 @@ router.post('/google', async (req, res) => {
           googleEmail: payload.email,
           googleAvatar: payload.picture,
           isVerified: true, // Google accounts are pre-verified
-          role: 'Participant', // Default role
+          role: 'participant', // Default role
         });
         await user.save();
       }

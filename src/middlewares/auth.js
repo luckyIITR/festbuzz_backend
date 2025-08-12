@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const FestivalUserRole = require('../models/FestivalUserRole');
+const { hasPermission } = require('./rolePermissions');
 
 const authMiddleware = (req, res, next) => {
   // console.log(`authMiddleware`);
@@ -20,7 +21,11 @@ const authMiddleware = (req, res, next) => {
 // Check global roles (superadmin, admin, participant)
 const permitRoles = (...roles) => (req, res, next) => {
   if (!roles.includes(req.user.role)) {
-    return res.status(403).json({ msg: 'Access denied' });
+    return res.status(403).json({ 
+      msg: 'Access denied',
+      requiredRoles: roles,
+      userRole: req.user.role
+    });
   }
   next();
 };
@@ -47,7 +52,11 @@ const permitFestivalRoles = (...roles) => async (req, res, next) => {
     });
 
     if (!festivalRole || !roles.includes(festivalRole.role)) {
-      return res.status(403).json({ msg: 'Access denied for this festival' });
+      return res.status(403).json({ 
+        msg: 'Access denied for this festival',
+        requiredRoles: roles,
+        userRole: festivalRole?.role || 'none'
+      });
     }
 
     // Add festival role to request for use in controllers
@@ -81,7 +90,11 @@ const canManageFestival = async (req, res, next) => {
     });
 
     if (!festivalRole) {
-      return res.status(403).json({ msg: 'Insufficient permissions for this festival' });
+      return res.status(403).json({ 
+        msg: 'Insufficient permissions for this festival',
+        requiredRoles: ['admin', 'festival head'],
+        userRole: 'none'
+      });
     }
 
     req.user.festivalRole = festivalRole.role;

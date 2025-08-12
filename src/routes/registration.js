@@ -6,6 +6,10 @@ const Team = require('../models/Team');
 const User = require('../models/User');
 const Event = require('../models/Event');
 const { authMiddleware } = require('../middlewares/auth');
+const { 
+  canViewParticipants,
+  canPublishResults
+} = require('../middlewares/rolePermissions');
 const mongoose = require('mongoose');
 const QRCode = require('qrcode');
 
@@ -405,7 +409,7 @@ router.get('/event/qrcode/:id', authMiddleware, async (req, res) => {
 });
 
 // Get total registration count for a fest
-router.get('/fest/:festId/count', authMiddleware, async (req, res) => {
+router.get('/fest/:festId/count', authMiddleware, canViewParticipants, async (req, res) => {
   try {
     const { festId } = req.params;
     
@@ -475,7 +479,7 @@ router.get('/fest/:festId/count', authMiddleware, async (req, res) => {
 });
 
 // Get detailed registration statistics for a fest (admin only)
-router.get('/fest/:festId/stats', authMiddleware, async (req, res) => {
+router.get('/fest/:festId/stats', authMiddleware, canViewParticipants, async (req, res) => {
   try {
     const { festId } = req.params;
     
@@ -588,7 +592,7 @@ router.get('/fest/:festId/stats', authMiddleware, async (req, res) => {
 });
 
 // Get total registration count for an event
-router.get('/event/:eventId/count', authMiddleware, async (req, res) => {
+router.get('/event/:eventId/count', authMiddleware, canViewParticipants, async (req, res) => {
   try {
     const { eventId } = req.params;
     
@@ -675,7 +679,7 @@ router.get('/event/:eventId/count', authMiddleware, async (req, res) => {
 });
 
 // Get detailed registration statistics for an event (admin only)
-router.get('/event/:eventId/stats', authMiddleware, async (req, res) => {
+router.get('/event/:eventId/stats', authMiddleware, canViewParticipants, async (req, res) => {
   try {
     const { eventId } = req.params;
     
@@ -816,7 +820,7 @@ router.get('/event/:eventId/stats', authMiddleware, async (req, res) => {
 });
 
 // Get registered candidates for a fest
-router.get('/fest/:festId/candidates', authMiddleware, async (req, res) => {
+router.get('/fest/:festId/candidates', authMiddleware, canViewParticipants, async (req, res) => {
   try {
     const { festId } = req.params;
     const { page = 1, limit = 50, status, search } = req.query;
@@ -943,7 +947,7 @@ router.get('/fest/:festId/candidates', authMiddleware, async (req, res) => {
 });
 
 // Get registered candidates for an event
-router.get('/event/:eventId/candidates', authMiddleware, async (req, res) => {
+router.get('/event/:eventId/candidates', authMiddleware, canViewParticipants, async (req, res) => {
   try {
     const { eventId } = req.params;
     const { page = 1, limit = 50, status, type, search } = req.query;

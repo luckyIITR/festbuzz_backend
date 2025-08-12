@@ -3,9 +3,18 @@ const router = express.Router();
 const Fest = require('../models/Fest');
 const Event = require('../models/Event');
 const { authMiddleware, permitRoles } = require('../middlewares/auth');
+const { 
+  canCreateFests, 
+  canManageFests, 
+  canCreateEvents, 
+  canModifyEvents, 
+  canManageEvents,
+  canViewEventDetails,
+  canViewParticipants
+} = require('../middlewares/rolePermissions');
 
-// Create Fest (only superadmin can create festivals)
-router.post('/', authMiddleware, permitRoles('superadmin','admin'), async (req, res) => {
+// Create Fest (superadmin and admin can create festivals)
+router.post('/', authMiddleware, canCreateFests, async (req, res) => {
   try {
     const festData = { ...req.body, createdBy: req.user.id };
     const fest = new Fest(festData);
@@ -41,8 +50,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Update Fest (only superadmin or festival admin can update)
-router.put('/:id', authMiddleware, permitRoles('superadmin', 'admin'), async (req, res) => {
+// Update Fest (superadmin, admin, and festival head can update)
+router.put('/:id', authMiddleware, canManageFests, async (req, res) => {
   try {
     const fest = await Fest.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!fest) return res.status(404).json({ msg: 'Fest not found' });
@@ -52,8 +61,8 @@ router.put('/:id', authMiddleware, permitRoles('superadmin', 'admin'), async (re
   }
 });
 
-// Delete Fest (only superadmin can delete)
-router.delete('/:id', authMiddleware, permitRoles('superadmin', 'admin'), async (req, res) => {
+// Delete Fest (superadmin and admin can delete)
+router.delete('/:id', authMiddleware, canManageFests, async (req, res) => {
   try {
     const fest = await Fest.findByIdAndDelete(req.params.id);
     if (!fest) return res.status(404).json({ msg: 'Fest not found' });
@@ -111,7 +120,7 @@ router.get('/:festId/events/:eventId', async (req, res) => {
 });
 
 // Create new event
-router.post('/:festId/events', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
+router.post('/:festId/events', authMiddleware, canCreateEvents, async (req, res) => {
   try {
     const eventData = {
       ...req.body,
@@ -126,7 +135,7 @@ router.post('/:festId/events', authMiddleware, permitRoles('Admin', 'FestivalHea
 });
 
 // Update event
-router.put('/:festId/events/:eventId', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
+router.put('/:festId/events/:eventId', authMiddleware, canModifyEvents, async (req, res) => {
   try {
     const event = await Event.findOneAndUpdate(
       { _id: req.params.eventId, festId: req.params.festId },
@@ -141,7 +150,7 @@ router.put('/:festId/events/:eventId', authMiddleware, permitRoles('Admin', 'Fes
 });
 
 // Delete event
-router.delete('/:festId/events/:eventId', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
+router.delete('/:festId/events/:eventId', authMiddleware, canManageEvents, async (req, res) => {
   try {
     const event = await Event.findOneAndDelete({ _id: req.params.eventId, festId: req.params.festId });
     if (!event) return res.status(404).json({ msg: 'Event not found' });

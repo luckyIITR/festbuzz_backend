@@ -3,6 +3,7 @@ const router = express.Router();
 const Certificate = require('../models/Certificate');
 const Event = require('../models/Event');
 const { authMiddleware, permitRoles } = require('../middlewares/auth');
+const { canSendCertificates } = require('../middlewares/rolePermissions');
 const mongoose = require('mongoose');
 
 /**
@@ -15,7 +16,7 @@ const mongoose = require('mongoose');
  *       201: { description: Certificate template created/updated }
  */
 // Create or update certificate template for an event
-router.post('/template', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
+router.post('/template', authMiddleware, canSendCertificates, async (req, res) => {
   try {
     const { festId, eventId, logo1, logo2, name1, designation1, name2, designation2, template } = req.body;
     let cert = await Certificate.findOne({ festId, eventId });
@@ -47,7 +48,7 @@ router.post('/template', authMiddleware, permitRoles('Admin', 'FestivalHead', 'E
  *       200: { description: Certificates issued }
  */
 // Assign winners and issue certificates
-router.post('/issue', authMiddleware, permitRoles('Admin', 'FestivalHead', 'EventManager'), async (req, res) => {
+router.post('/issue', authMiddleware, canSendCertificates, async (req, res) => {
   try {
     const { festId, eventId, participants, winners } = req.body;
     let cert = await Certificate.findOne({ festId, eventId });

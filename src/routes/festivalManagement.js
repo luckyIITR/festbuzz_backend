@@ -4,9 +4,10 @@ const FestivalUserRole = require('../models/FestivalUserRole');
 const User = require('../models/User');
 const Fest = require('../models/Fest');
 const { authMiddleware, permitRoles, canManageFestival } = require('../middlewares/auth');
+const { canAssignEventRoles } = require('../middlewares/rolePermissions');
 
 // Assign role to user in a festival (only superadmin or festival admin can do this)
-router.post('/:festId/assign-role', authMiddleware, canManageFestival, async (req, res) => {
+router.post('/:festId/assign-role', authMiddleware, canAssignEventRoles, async (req, res) => {
   try {
     const { userId, role } = req.body;
     const { festId } = req.params;
@@ -47,7 +48,7 @@ router.post('/:festId/assign-role', authMiddleware, canManageFestival, async (re
 });
 
 // Remove role from user in a festival
-router.delete('/:festId/remove-role/:userId', authMiddleware, canManageFestival, async (req, res) => {
+router.delete('/:festId/remove-role/:userId', authMiddleware, canAssignEventRoles, async (req, res) => {
   try {
     const { festId, userId } = req.params;
 
@@ -68,7 +69,7 @@ router.delete('/:festId/remove-role/:userId', authMiddleware, canManageFestival,
 });
 
 // Get all users with roles in a festival
-router.get('/:festId/users', authMiddleware, canManageFestival, async (req, res) => {
+router.get('/:festId/users', authMiddleware, canAssignEventRoles, async (req, res) => {
   try {
     const { festId } = req.params;
 

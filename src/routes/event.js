@@ -4,10 +4,20 @@ const Event = require('../models/Event');
 const Registration = require('../models/Registration');
 const Team = require('../models/Team');
 const { authMiddleware, permitRoles } = require('../middlewares/auth');
+const { 
+  canCreateEvents, 
+  canModifyEvents, 
+  canManageEvents,
+  canViewEventDetails,
+  canViewParticipants,
+  canAssignEventRoles,
+  canSendCertificates,
+  canPublishResults
+} = require('../middlewares/rolePermissions');
 
 
 // Create Event (as draft by default)
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, canCreateEvents, async (req, res) => {
   try {
     const eventData = {
       ...req.body,
@@ -31,7 +41,7 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // Save Event as Draft
-router.post('/draft', authMiddleware, async (req, res) => {
+router.post('/draft', authMiddleware, canCreateEvents, async (req, res) => {
   try {
     const eventData = {
       ...req.body,
@@ -82,7 +92,7 @@ router.post('/draft', authMiddleware, async (req, res) => {
 });
 
 // Publish Event
-router.post('/:id/publish', authMiddleware, async (req, res) => {
+router.post('/:id/publish', authMiddleware, canModifyEvents, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) {
@@ -124,7 +134,7 @@ router.post('/:id/publish', authMiddleware, async (req, res) => {
 });
 
 // Unpublish Event (back to draft)
-router.post('/:id/unpublish', authMiddleware, async (req, res) => {
+router.post('/:id/unpublish', authMiddleware, canModifyEvents, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) {
@@ -155,7 +165,7 @@ router.post('/:id/unpublish', authMiddleware, async (req, res) => {
 });
 
 // Archive Event
-router.post('/:id/archive', authMiddleware, async (req, res) => {
+router.post('/:id/archive', authMiddleware, canManageEvents, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) {
@@ -183,7 +193,7 @@ router.post('/:id/archive', authMiddleware, async (req, res) => {
 });
 
 // Get event status and draft info
-router.get('/:id/status', authMiddleware, async (req, res) => {
+router.get('/:id/status', authMiddleware, canViewEventDetails, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) {
@@ -265,7 +275,7 @@ router.get('/published', async (req, res) => {
 });
 
 // Get draft events (admin only)
-router.get('/drafts', authMiddleware, async (req, res) => {
+router.get('/drafts', authMiddleware, canViewEventDetails, async (req, res) => {
   try {
     const { festId } = req.query;
     const query = { status: 'draft' };
@@ -308,7 +318,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update Event
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, canModifyEvents, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ 
@@ -338,7 +348,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 });
 
 // Update Event as Draft
-router.put('/:id/draft', authMiddleware, async (req, res) => {
+router.put('/:id/draft', authMiddleware, canModifyEvents, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ 
@@ -368,7 +378,7 @@ router.put('/:id/draft', authMiddleware, async (req, res) => {
 });
 
 // Delete Event
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, canManageEvents, async (req, res) => {
   try {
     const event = await Event.findByIdAndDelete(req.params.id);
     if (!event) return res.status(404).json({ 
@@ -388,7 +398,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 });
 
 // Add judge to event
-router.post('/:id/judges', authMiddleware, async (req, res) => {
+router.post('/:id/judges', authMiddleware, canManageEvents, async (req, res) => {
   try {
     const { name, mobile, about, email, photo } = req.body;
     const event = await Event.findById(req.params.id);
@@ -402,7 +412,7 @@ router.post('/:id/judges', authMiddleware, async (req, res) => {
 });
 
 // Remove judge from event
-router.delete('/:id/judges/:judgeIndex', authMiddleware, async (req, res) => {
+router.delete('/:id/judges/:judgeIndex', authMiddleware, canManageEvents, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ msg: 'Event not found' });
@@ -426,7 +436,7 @@ router.get('/:id/judges', async (req, res) => {
 });
 
 // Assign event role
-router.post('/:id/roles', authMiddleware, async (req, res) => {
+router.post('/:id/roles', authMiddleware, canAssignEventRoles, async (req, res) => {
   try {
     const { type, name, email } = req.body;
     const event = await Event.findById(req.params.id);
@@ -440,7 +450,7 @@ router.post('/:id/roles', authMiddleware, async (req, res) => {
 });
 
 // Remove event role
-router.delete('/:id/roles/:roleIndex', authMiddleware, async (req, res) => {
+router.delete('/:id/roles/:roleIndex', authMiddleware, canAssignEventRoles, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ msg: 'Event not found' });
