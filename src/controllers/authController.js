@@ -197,10 +197,9 @@ const login = async (req, res, next) => {
 // @access  Public
 const googleLogin = async (req, res, next) => {
   try {
-    const { token } = req.body;
-    
+    const { accessToken } = req.body;
     const ticket = await googleClient.verifyIdToken({
-      idToken: token,
+      idToken: accessToken,
       audience: process.env.GOOGLE_CLIENT_ID
     });
     
