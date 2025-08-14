@@ -3,6 +3,7 @@ const User = require('../models/User');
 const FestRegistration = require('../models/FestRegistration');
 const { AppError } = require('../middlewares/errorHandler');
 const logger = require('../utils/logger');
+const { successResponse } = require('../utils/response');
 
 // @desc    Get all fests user is associated with
 // @route   GET /api/myfests
@@ -18,10 +19,7 @@ const getMyFests = async (req, res, next) => {
     const ongoing = fests.filter(f => f.startDate && f.endDate && f.startDate <= now && f.endDate >= now);
     const past = fests.filter(f => f.endDate && f.endDate < now);
     
-    res.json({
-      success: true,
-      data: { upcoming, ongoing, past }
-    });
+    return successResponse(res, 200, 'My fests retrieved successfully', { upcoming, ongoing, past });
   } catch (error) {
     logger.error('Get my fests error:', error);
     next(error);
@@ -37,10 +35,7 @@ const getRecentlyViewedFests = async (req, res, next) => {
     const festIds = user.recentlyViewedFests || [];
     const fests = await Fest.find({ _id: { $in: festIds } });
     
-    res.json({
-      success: true,
-      data: fests
-    });
+    return successResponse(res, 200, 'Recently viewed fests retrieved successfully', fests);
   } catch (error) {
     logger.error('Get recently viewed fests error:', error);
     next(error);
@@ -56,10 +51,7 @@ const getWishlistFests = async (req, res, next) => {
     const festIds = user.wishlistFests || [];
     const fests = await Fest.find({ _id: { $in: festIds } });
     
-    res.json({
-      success: true,
-      data: fests
-    });
+    return successResponse(res, 200, 'Wishlist fests retrieved successfully', fests);
   } catch (error) {
     logger.error('Get wishlist fests error:', error);
     next(error);
@@ -75,10 +67,7 @@ const getRegisteredFests = async (req, res, next) => {
     const festIds = regs.map(r => r.festId);
     const fests = await Fest.find({ _id: { $in: festIds } });
     
-    res.json({
-      success: true,
-      data: fests
-    });
+    return successResponse(res, 200, 'Registered fests retrieved successfully', fests);
   } catch (error) {
     logger.error('Get registered fests error:', error);
     next(error);
@@ -122,10 +111,7 @@ const getRecommendedFests = async (req, res, next) => {
       recommendedFests = [...recommendedFests, ...randomFests];
     }
     
-    res.json({
-      success: true,
-      data: recommendedFests
-    });
+    return successResponse(res, 200, 'Recommended fests retrieved successfully', recommendedFests);
   } catch (error) {
     logger.error('Get recommended fests error:', error);
     next(error);
@@ -155,10 +141,7 @@ const addToWishlist = async (req, res, next) => {
       logger.info(`User ${req.user.id} added fest ${festId} to wishlist`);
     }
     
-    res.json({
-      success: true,
-      message: 'Added to wishlist'
-    });
+    return successResponse(res, 200, 'Added to wishlist');
   } catch (error) {
     logger.error('Add to wishlist error:', error);
     next(error);
@@ -180,10 +163,7 @@ const removeFromWishlist = async (req, res, next) => {
     
     logger.info(`User ${req.user.id} removed fest ${festId} from wishlist`);
     
-    res.json({
-      success: true,
-      message: 'Removed from wishlist'
-    });
+    return successResponse(res, 200, 'Removed from wishlist');
   } catch (error) {
     logger.error('Remove from wishlist error:', error);
     next(error);
@@ -215,9 +195,7 @@ const getMyFestsStats = async (req, res, next) => {
     // Get categories user is interested in
     const categories = [...new Set(fests.map(f => f.category))];
     
-    res.json({
-      success: true,
-      data: {
+    return successResponse(res, 200, 'My fests stats retrieved successfully', {
         totalRegistered,
         upcomingCount,
         ongoingCount,
@@ -225,7 +203,7 @@ const getMyFestsStats = async (req, res, next) => {
         wishlistCount,
         categories,
         totalFests: fests.length
-      }
+        
     });
   } catch (error) {
     logger.error('Get my fests stats error:', error);
