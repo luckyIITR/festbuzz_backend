@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGO_URI=mongodb://mongo:27017/festbuz
+      - JWT_SECRET=your-super-secret-jwt-key-here
+      - GOOGLE_CLIENT_ID=your-google-client-id
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_USER=your-email@gmail.com
+      - EMAIL_PASS=your-email-password
+      - ALLOWED_ORIGINS=http://localhost:3000,https://festbuzz-frontend.vercel.app
+    depends_on:
+      - mongo
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - festbuz-network
+
+  mongo:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongo_data:/data/db
+      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    restart: unless-stopped
+    networks:
+      - festbuz-network
+
+  mongo-express:
+    image: mongo-express:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_URL=mongodb://admin:password@mongo:27017/
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=password
+    depends_on:
+      - mongo
+    restart: unless-stopped
+    networks:
+      - festbuz-network
+
+volumes:
+  mongo_data:
+
+networks:
+  festbuz-network:
+    driver: bridge

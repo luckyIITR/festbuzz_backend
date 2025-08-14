@@ -1,109 +1,240 @@
 const express = require('express');
 const router = express.Router();
-const Fest = require('../models/Fest');
-const Event = require('../models/Event');
 const { authMiddleware } = require('../middlewares/auth');
 const { 
   canCreateFests, 
   canManageFests, 
 } = require('../middlewares/rolePermissions');
+// const { validateObjectId } = require('../middlewares/validation');
+const {
+  createFest,
+  getAllFests,
+  getFestById,
+  updateFest,
+  deleteFest,
+  getFestEvents,
+  getFestFilters,
+  searchFests
+} = require('../controllers/festController');
 
-// Create Fest (superadmin and admin can create festivals)
-router.post('/', authMiddleware, canCreateFests, async (req, res) => {
-  try {
-    const festData = { ...req.body, createdBy: req.user.id };
-    const fest = new Fest(festData);
-    await fest.save();
-    res.status(201).json(fest);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
+/**
+ * @swagger
+ * /api/fests:
+ *   post:
+ *     summary: Create a new festival
+ *     tags: [Festivals]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - description
+ *               - startDate
+ *               - endDate
+ *               - venue
+ *               - category
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               startDate:
+ *                 type: string
+ *                 format: date-time
+ *               endDate:
+ *                 type: string
+ *                 format: date-time
+ *               venue:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Festival created successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Not authorized
+ */
+router.post('/', authMiddleware, canCreateFests, createFest);
 
-// Get all Fests with optional filters: trending, upcoming
-router.get('/', async (req, res) => {
-  try {
-    const { trending, upcoming } = req.query;
-    let filter = {};
-    if (trending === 'true') filter.trending = true;
-    if (upcoming === 'true') filter.upcoming = true;
-    const fests = await Fest.find(filter);
-    res.json(fests);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
+/**
+ * @swagger
+ * /api/fests:
+ *   get:
+ *     summary: Get all festivals with optional filters
+ *     tags: [Festivals]
+ *     parameters:
+ *       - in: query
+ *         name: trending
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: upcoming
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: location
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of festivals
+ */
+router.get('/', getAllFests);
 
-// Get Fest by ID and populate events
-router.get('/:id', async (req, res) => {
-  try {
-    const fest = await Fest.findById(req.params.id).populate('events');
-    if (!fest) return res.status(404).json({ msg: 'Fest not found' });
-    res.json(fest);
-  } catch (err) {
-    res.status(500).json({ msg: err.message });
-  }
-});
+/**
+ * @swagger
+ * /api/fests/filters:
+ *   get:
+ *     summary: Get festival filters
+ *     tags: [Festivals]
+ *     responses:
+ *       200:
+ *         description: Festival filters
+ */
+router.get('/filters', getFestFilters);
 
-// Update Fest (superadmin, admin, and festival head can update)
-router.put('/:id', authMiddleware, canManageFests, async (req, res) => {
-  try {
-    const fest = await Fest.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!fest) return res.status(404).json({ msg: 'Fest not found' });
-    res.json(fest);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
+/**
+ * @swagger
+ * /api/fests/search:
+ *   get:
+ *     summary: Search festivals
+ *     tags: [Festivals]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: location
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Search results
+ */
+router.get('/search', searchFests);
 
-// Delete Fest (superadmin and admin can delete)
-router.delete('/:id', authMiddleware, canManageFests, async (req, res) => {
-  try {
-    const fest = await Fest.findByIdAndDelete(req.params.id);
-    if (!fest) return res.status(404).json({ msg: 'Fest not found' });
-    res.json({ msg: 'Fest deleted' });
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
+/**
+ * @swagger
+ * /api/fests/{id}:
+ *   get:
+ *     summary: Get festival by ID
+ *     tags: [Festivals]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Festival details
+ *       404:
+ *         description: Festival not found
+ */
+router.get('/:id', getFestById);
 
-// Register for a fest
-const Registration = require('../models/Registration');
+/**
+ * @swagger
+ * /api/fests/{id}:
+ *   put:
+ *     summary: Update festival
+ *     tags: [Festivals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Festival updated successfully
+ *       404:
+ *         description: Festival not found
+ *       401:
+ *         description: Not authorized
+ */
+router.put('/:id', authMiddleware, canManageFests, updateFest);
 
+/**
+ * @swagger
+ * /api/fests/{id}:
+ *   delete:
+ *     summary: Delete festival
+ *     tags: [Festivals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Festival deleted successfully
+ *       404:
+ *         description: Festival not found
+ *       401:
+ *         description: Not authorized
+ */
+router.delete('/:id', authMiddleware, canManageFests, deleteFest);
 
-// Get all events for a specific fest
-router.get('/:festId/events', async (req, res) => {
-  try {
-    const events = await Event.find({ festId: req.params.festId });
-    res.json(events);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// GET /api/fests/filters
-router.get('/filters', async (req, res) => {
-  try {
-    const types = await Fest.distinct('type');
-    const locations = await Fest.distinct('location');
-    const prices = await Fest.find({}, { individualPrice: 1, teamPrice: 1, _id: 0 });
-    const allPrices = prices.flatMap(p => [p.individualPrice, p.teamPrice].filter(Number.isFinite));
-    const minPrice = allPrices.length ? Math.min(...allPrices) : 0;
-    const maxPrice = allPrices.length ? Math.max(...allPrices) : 0;
-    const dates = await Fest.find({}, { startDate: 1, endDate: 1, _id: 0 });
-    const allDates = dates.flatMap(d => [d.startDate, d.endDate].filter(Boolean));
-    const minDate = allDates.length ? new Date(Math.min(...allDates.map(d => new Date(d)))) : null;
-    const maxDate = allDates.length ? new Date(Math.max(...allDates.map(d => new Date(d)))) : null;
-    res.json({
-      types,
-      locations,
-      price: { min: minPrice, max: maxPrice },
-      date: { min: minDate, max: maxDate },
-      ratings: [] // Placeholder
-    });
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
+/**
+ * @swagger
+ * /api/fests/{festId}/events:
+ *   get:
+ *     summary: Get all events for a specific festival
+ *     tags: [Festivals]
+ *     parameters:
+ *       - in: path
+ *         name: festId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of events for the festival
+ */
+router.get('/:festId/events', getFestEvents);
 
 module.exports = router; 

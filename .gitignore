@@ -32,20 +32,19 @@ coverage/
 # nyc test coverage
 .nyc_output
 
-# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
+# Grunt intermediate storage
 .grunt
 
-# Bower dependency directory (https://bower.io/)
+# Bower dependency directory
 bower_components
 
 # node-waf configuration
 .lock-wscript
 
-# Compiled binary addons (https://nodejs.org/api/addons.html)
+# Compiled binary addons
 build/Release
 
 # Dependency directories
-node_modules/
 jspm_packages/
 
 # TypeScript v1 declaration files
@@ -76,10 +75,9 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
 .env.test
 
-# parcel-bundler cache (https://parceljs.org/)
+# parcel-bundler cache
 .cache
 .parcel-cache
 
@@ -92,42 +90,22 @@ dist
 
 # Gatsby files
 .cache/
-# Comment in the public line in if your project uses Gatsby and not Next.js
-# https://nextjs.org/blog/next-9-1#public-directory-support
-# public
+public
 
-# vuepress build output
-.vuepress/dist
+# Storybook build outputs
+.out
+.storybook-out
 
-# Serverless directories
-.serverless/
-
-# FuseBox cache
-.fusebox/
-
-# DynamoDB Local files
-.dynamodb/
-
-# TernJS port file
-.tern-port
-
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
-
-# yarn v2
-.yarn/cache
-.yarn/unplugged
-.yarn/build-state.yml
-.yarn/install-state.gz
-.pnp.*
-
-# Uploads directory (user uploaded files)
-uploads/
-public/uploads/
-
-# Temporary files
+# Temporary folders
 tmp/
 temp/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # OS generated files
 .DS_Store
@@ -138,27 +116,19 @@ temp/
 ehthumbs.db
 Thumbs.db
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Uploads
+uploads/*
+!uploads/.gitkeep
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
+# Test coverage
+coverage/
 
-# Backup files
-*.bak
-*.backup
+# Build artifacts
+build/
+dist/
 
-# Certificate files
-*.pem
-*.key
-*.crt
+# Docker
+.dockerignore
 
-# Package lock files (optional - uncomment if you want to ignore them)
-# package-lock.json
-# yarn.lock 
+# Local development
+*.local 

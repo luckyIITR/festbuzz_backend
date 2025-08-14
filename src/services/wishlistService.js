@@ -47,7 +47,7 @@ class WishlistService {
       const skip = (page - 1) * limit;
       
       const wishlist = await Wishlist.find({ userId })
-        .populate('festId', 'name type state city venue college startDate endDate logo heroImage')
+        .populate('festId')
         .sort({ addedAt: -1 })
         .skip(skip)
         .limit(limit);

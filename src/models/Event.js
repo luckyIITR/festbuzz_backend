@@ -37,6 +37,7 @@ const ticketSchema = new mongoose.Schema({
 
 const eventSchema = new mongoose.Schema({
   festId: { type: mongoose.Schema.Types.ObjectId, ref: 'Fest', required: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
   name: { type: String, required: true },
   type: { type: String, required: true },
   visibility: { type: String, required: true },

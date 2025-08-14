@@ -1,108 +1,131 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middlewares/auth');
-const WishlistService = require('../services/wishlistService');
+// const { validateObjectId } = require('../middlewares/validation');
+const {
+  addToWishlist,
+  removeFromWishlist,
+  getUserWishlist,
+  checkWishlistStatus,
+  getWishlistCount,
+  clearWishlist
+} = require('../controllers/wishlistController');
 
-// Add fest to wishlist
-router.post('/add/:festId', authMiddleware, async (req, res) => {
-  try {
-    const { festId } = req.params;
-    const userId = req.user.id;
+/**
+ * @swagger
+ * /api/wishlist/add/{festId}:
+ *   post:
+ *     summary: Add fest to wishlist
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: festId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       201:
+ *         description: Fest added to wishlist successfully
+ *       400:
+ *         description: Fest already in wishlist
+ *       404:
+ *         description: Festival not found
+ */
+router.post('/add/:festId', authMiddleware, addToWishlist);
 
-    const wishlistItem = await WishlistService.addToWishlist(userId, festId);
-    res.status(201).json({
-      success: true,
-      message: 'Fest added to wishlist successfully',
-      data: wishlistItem
-    });
-  } catch (error) {
-    if (error.message === 'Fest not found') {
-      return res.status(404).json({ success: false, message: error.message });
-    }
-    if (error.message === 'Fest already in wishlist') {
-      return res.status(400).json({ success: false, message: error.message });
-    }
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+/**
+ * @swagger
+ * /api/wishlist/remove/{festId}:
+ *   delete:
+ *     summary: Remove fest from wishlist
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: festId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Fest removed from wishlist successfully
+ *       404:
+ *         description: Fest not found in wishlist
+ */
+router.delete('/remove/:festId', authMiddleware, removeFromWishlist);
 
-// Remove fest from wishlist
-router.delete('/remove/:festId', authMiddleware, async (req, res) => {
-  try {
-    const { festId } = req.params;
-    const userId = req.user.id;
+/**
+ * @swagger
+ * /api/wishlist:
+ *   get:
+ *     summary: Get user's wishlist
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: User's wishlist
+ */
+router.get('/', authMiddleware, getUserWishlist);
 
-    await WishlistService.removeFromWishlist(userId, festId);
-    res.json({
-      success: true,
-      message: 'Fest removed from wishlist successfully'
-    });
-  } catch (error) {
-    if (error.message === 'Fest not found in wishlist') {
-      return res.status(404).json({ success: false, message: error.message });
-    }
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+/**
+ * @swagger
+ * /api/wishlist/check/{festId}:
+ *   get:
+ *     summary: Check if fest is in wishlist
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: festId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Wishlist status
+ */
+router.get('/check/:festId', authMiddleware, checkWishlistStatus);
 
-// Get user's wishlist
-router.get('/', authMiddleware, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { page = 1, limit = 50 } = req.query;
+/**
+ * @swagger
+ * /api/wishlist/count:
+ *   get:
+ *     summary: Get wishlist count
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Wishlist count
+ */
+router.get('/count', authMiddleware, getWishlistCount);
 
-    const result = await WishlistService.getUserWishlist(userId, parseInt(limit), parseInt(page));
-    res.json({
-      success: true,
-      data: result
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
-// Check if fest is in wishlist
-router.get('/check/:festId', authMiddleware, async (req, res) => {
-  try {
-    const { festId } = req.params;
-    const userId = req.user.id;
-
-    const isInWishlist = await WishlistService.isInWishlist(userId, festId);
-    res.json({
-      success: true,
-      data: { isInWishlist }
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
-// Get wishlist count
-router.get('/count', authMiddleware, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const count = await WishlistService.getWishlistCount(userId);
-    res.json({
-      success: true,
-      data: { count }
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
-// Clear entire wishlist
-router.delete('/clear', authMiddleware, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    await WishlistService.clearWishlist(userId);
-    res.json({
-      success: true,
-      message: 'Wishlist cleared successfully'
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+/**
+ * @swagger
+ * /api/wishlist/clear:
+ *   delete:
+ *     summary: Clear entire wishlist
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Wishlist cleared successfully
+ */
+router.delete('/clear', authMiddleware, clearWishlist);
 
 module.exports = router; 
